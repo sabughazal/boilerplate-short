@@ -2,11 +2,11 @@
  A shorter version of the boilerplate template for ML experiments.
 
 ### Current Features
-- Run Evaluation at a specified epochs interval.
+- Running Evaluation at a specified epochs interval.
 - Saving checkpoints of the model weights at a specified epochs interval.
 - Saving the best checkpoint based on the evaluation loss.
 - Logging training loss and evaluation loss on Tensorboard.
-- Supports tracking different runs and stores the runs outputs.
+- Tracking multiple different runs and storing the runs outputs.
 - Storing run logs that include a summary of the model, the provided inline arguments for the run, the checkpoints, and the Tensorboard logs.
 
 ### Difference from the full boilerplate
