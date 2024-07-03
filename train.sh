@@ -1,2 +1,4 @@
 python train.py \
-    --run-name "" \
+    --dataset-root "" \
+    --seed 711 \
+    --use-tb \
