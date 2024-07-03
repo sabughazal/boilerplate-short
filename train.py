@@ -30,11 +30,6 @@ def get_inline_args():
         default=datetime.strftime(datetime.now(), "%Y%m%d_%H%M%S"),
         help="The run name to use as a label in file names and in W&B.")
     parser.add_argument(
-        '--output-dir',
-        type=str,
-        default="runs",
-        help="The path to output directory for logs and checkpoints.")
-    parser.add_argument(
         '--eval-every',
         type=int,
         default=2,
@@ -78,7 +73,7 @@ def get_inline_args():
 def main(args):
 
     assert args.run_name.strip() != "", "Invalid run name!"
-    OUTPUT_PATH = os.path.join(args.output_dir, args.run_name)
+    OUTPUT_PATH = os.path.join(".", "runs", args.run_name)
     os.makedirs(OUTPUT_PATH, exist_ok=False)
     log_run_args(args, OUTPUT_PATH)
     print("Running with the following arguments:\n{}".format(args))
@@ -106,7 +101,7 @@ def main(args):
     # define a model
     model = ModelType()
     model = model.to(DEVICE)
-    num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    num_params = count_model_params(model)
     print("The model has {:,} trainable parameters.".format(num_params))
     print("The model has the following structure:\n{}".format(model))
     log_model_arch(model, OUTPUT_PATH)
