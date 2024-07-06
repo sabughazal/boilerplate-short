@@ -12,12 +12,28 @@ class DatasetType(Dataset):
     def __init__(self, data_root, split):
         super().__init__()
         self.samples = []
+        assert os.path.exists(data_root), "Invalid data root path!"
+        assert split in ["train", "eval", "test"], "Invalid split!"
+
+        # placeholder dataset
+        for _ in range(2000 * (["test", "eval", "train"].index(split)+1)):
+            self.samples.append((
+                np.random.random((1, 28, 28)),
+                np.random.randint(0, 10, size=(1,))
+            ))
+
 
     def __len__(self):
         return len(self.samples)
 
     def __getitem__(self, index):
-        return 0, 0
+        sample, label = self.samples[index]
+        sample = sample.flatten()
+
+        sample = torch.from_numpy(sample).type(torch.float32)
+        label = torch.from_numpy(label).type(torch.int64)
+
+        return sample, label
 
 
 

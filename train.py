@@ -71,7 +71,6 @@ def get_inline_args():
 
 
 def main(args):
-
     assert args.run_name.strip() != "", "Invalid run name!"
     OUTPUT_PATH = os.path.join(".", "runs", args.run_name)
     os.makedirs(OUTPUT_PATH, exist_ok=False)
@@ -107,7 +106,7 @@ def main(args):
     log_model_arch(model, OUTPUT_PATH)
 
     # define a loss function
-    criterion = nn.MSELoss()
+    criterion = nn.CrossEntropyLoss()
 
     # define an  optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -122,15 +121,17 @@ def main(args):
 
 
     # train
-    # (might need modification based on the application)
     best_eval_loss = float('inf')
+    print(f"Run logs will be stored in:\n{os.path.abspath(OUTPUT_PATH)}")
     for epoch in range(args.num_epochs):
         for inputs, targets in tqdm(train_loader, total=len(train_loader), desc=f"Epoch {epoch+1}/{args.num_epochs}"):
             inputs = inputs.to(DEVICE)
             targets = targets.to(DEVICE)
 
-            outputs = model(inputs)
-            train_loss = criterion(outputs, inputs)
+            logits, preds = model(inputs)
+
+            targets = targets.squeeze(-1)
+            train_loss = criterion(preds, targets)
 
             optimizer.zero_grad()
             train_loss.backward()
@@ -153,9 +154,13 @@ def main(args):
                     eval_inputs = eval_inputs.to(DEVICE)
                     eval_targets = eval_targets.to(DEVICE)
 
-                    eval_outputs = model(eval_inputs)
-                    loss = criterion(eval_outputs, eval_inputs)
+                    logits, eval_preds = model(eval_inputs)
+
+                    eval_targets = eval_targets.squeeze(-1)
+                    loss = criterion(eval_preds, eval_targets)
+
                     losses_sum += loss.item()
+
             eval_loss = losses_sum / len(eval_loader)
 
             if eval_loss < best_eval_loss:
@@ -167,6 +172,7 @@ def main(args):
                 tb_writer.add_scalar("eval_loss", eval_loss, epoch)
 
             print("Eval loss: {:.8f}; Best eval loss: {:.8f}.".format(eval_loss, best_eval_loss))
+    print(f"Run logs are stored in:\n{os.path.abspath(OUTPUT_PATH)}")
 
     if args.use_tb:
         tb_writer.flush()
