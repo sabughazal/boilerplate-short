@@ -55,9 +55,14 @@ def get_inline_args():
         default=60,
         help="The number of training epochs.")
     parser.add_argument(
+        '--patience',
+        type=int,
+        default=None,
+        help="Stop the training if the evaluation loss does not decrease in this many epochs.")
+    parser.add_argument(
         '--device',
         type=str,
-        help="The number of training epochs.")
+        help="The device to use for training. Accepts 'cuda', 'cpu'.")
     parser.add_argument(
         '--seed',
         type=int,
@@ -122,6 +127,7 @@ def main(args):
 
     # train
     best_eval_loss = float('inf')
+    epochs_since_best = 0
     print(f"Run logs will be stored in:\n{os.path.abspath(OUTPUT_PATH)}")
     for epoch in range(args.num_epochs):
         for inputs, targets in tqdm(train_loader, total=len(train_loader), desc=f"Epoch {epoch+1}/{args.num_epochs}"):
@@ -137,6 +143,7 @@ def main(args):
             train_loss.backward()
             optimizer.step()
 
+        epochs_since_best += 1
         if args.use_tb:
             tb_writer.add_scalar("train_loss", train_loss, epoch)
 
@@ -165,6 +172,7 @@ def main(args):
 
             if eval_loss < best_eval_loss:
                 best_eval_loss = eval_loss
+                epochs_since_best = 0
                 save_checkpoint(model, epoch, OUTPUT_PATH, fname="best_chkpt.pt")
                 print(f"Best checkpoint saved at epoch {epoch+1}!")
 
@@ -172,6 +180,12 @@ def main(args):
                 tb_writer.add_scalar("eval_loss", eval_loss, epoch)
 
             print("Eval loss: {:.8f}; Best eval loss: {:.8f}.".format(eval_loss, best_eval_loss))
+            if args.patience and epochs_since_best >= args.patience:
+                print("Early stopping triggered; eval loss did not go lower than {:.4f} in the last {} epochs.".format(best_eval_loss, args.patience))
+                save_checkpoint(model, epoch, OUTPUT_PATH, fname="best_chkpt.pt")
+                print("Checkpoint saved at epoch {}!".format(epoch+1))
+                break
+
     print(f"Run logs are stored in:\n{os.path.abspath(OUTPUT_PATH)}")
 
     if args.use_tb:
